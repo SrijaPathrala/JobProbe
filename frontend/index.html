@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JobProbe - Fake Job Detector</title>
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 40px 20px 60px;
+    background: linear-gradient(180deg, #f0f2f8 0%, #e9ecf5 100%);
+    color: #1e2432;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  header h1 {
+    font-size: 32px;
+    margin: 0;
+    color: #1a2238;
+  }
+
+  header p {
+    color: #5a6478;
+    margin-top: 6px;
+    font-size: 15px;
+  }
+
+  .input-card {
+    background: white;
+    padding: 20px;
+    border-radius: 14px;
+    box-shadow: 0 4px 16px rgba(30, 36, 50, 0.08);
+  }
+
+  textarea {
+    width: 100%;
+    height: 150px;
+    padding: 12px;
+    font-size: 14px;
+    border-radius: 8px;
+    border: 1.5px solid #dfe3ee;
+    resize: vertical;
+    font-family: inherit;
+  }
+
+  textarea:focus {
+    outline: none;
+    border-color: #4a5cf0;
+  }
+
+  .btn-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+  }
+
+  button {
+    padding: 11px 26px;
+    background: #2d3561;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  button:hover {
+    background: #1c2245;
+  }
+
+  .sample-link {
+    font-size: 13px;
+    color: #4a5cf0;
+    cursor: pointer;
+    text-decoration: underline;
+    background: none;
+    border: none;
+    padding: 0;
+    font-weight: 500;
+  }
+
+  #result {
+    margin-top: 25px;
+  }
+
+  .risk-box {
+    padding: 18px 20px;
+    border-radius: 12px;
+    color: white;
+    font-weight: 700;
+    font-size: 17px;
+    margin-bottom: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .Low { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+  .Medium { background: linear-gradient(135deg, #f5a623, #e08e0b); }
+  .High { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+
+  .score-pill {
+    background: rgba(255,255,255,0.25);
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 15px;
+  }
+
+  .section {
+    background: white;
+    padding: 18px 20px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 10px rgba(30, 36, 50, 0.06);
+  }
+
+  .section h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-size: 16px;
+    color: #1a2238;
+  }
+
+  .flag {
+    border-left: 4px solid #e74c3c;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    background: #fdf1f0;
+    border-radius: 0 8px 8px 0;
+  }
+
+  .flag:last-child { margin-bottom: 0; }
+
+  .flag-title {
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+
+  .severity-tag {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+  }
+
+  .severity-high { background: #f8d7da; color: #a12a2a; }
+  .severity-medium { background: #fdecc8; color: #96650a; }
+
+  .no-flags {
+    color: #5a6478;
+    font-style: italic;
+  }
+
+  ul.info-list, ul.rec-list {
+    padding-left: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  ul.info-list li {
+    padding: 6px 0;
+    border-bottom: 1px solid #f0f1f6;
+    font-size: 14px;
+  }
+
+  ul.info-list li:last-child { border-bottom: none; }
+
+  ul.rec-list li {
+    padding: 6px 0 6px 22px;
+    position: relative;
+    font-size: 14px;
+  }
+
+  ul.rec-list li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #27ae60;
+    font-weight: bold;
+  }
+
+  .ml-bar-bg {
+    background: #eef0f7;
+    border-radius: 20px;
+    height: 10px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  .ml-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4a5cf0, #7d5cf0);
+    border-radius: 20px;
+    transition: width 0.4s ease;
+  }
+
+  .loading {
+    text-align: center;
+    color: #5a6478;
+    padding: 20px;
+    font-size: 14px;
+  }
+
+  .error-msg {
+    color: #c0392b;
+    background: #fdf1f0;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔎 JobProbe</h1>
+  <p>Paste a job posting or recruiter message to check if it's a scam.</p>
+</header>
+
+<div class="input-card">
+  <textarea id="jobText" placeholder="Paste job posting or recruiter message here..."></textarea>
+  <div class="btn-row">
+    <button onclick="analyzeJob()">Analyze</button>
+    <button class="sample-link" onclick="loadSample()">Try a sample scam message</button>
+  </div>
+</div>
+
+<div id="result"></div>
+
+<script>
+const sampleText = "Work from home! Earn ₹80,000/week, no experience needed. Pay ₹500 registration fee. Contact hr@fakecompany.com. Apply within 24 hours, limited seats! Visit http://bit.ly/fake-job-123";
+
+function loadSample() {
+  document.getElementById("jobText").value = sampleText;
+}
+
+async function analyzeJob() {
+  const text = document.getElementById("jobText").value;
+  const resultDiv = document.getElementById("result");
+
+  if (!text.trim()) {
+    resultDiv.innerHTML = "<div class='error-msg'>Please paste a job posting first.</div>";
+    return;
+  }
+
+  resultDiv.innerHTML = "<div class='loading'>Analyzing job posting...</div>";
+
+  try {
+    const response = await fetch("http://127.0.0.1:8000/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: text })
+    });
+
+    const data = await response.json();
+    renderResult(data);
+  } catch (err) {
+    resultDiv.innerHTML = "<div class='error-msg'>Could not connect to JobProbe backend. Is the server running?</div>";
+    console.error(err);
+  }
+}
+
+function renderResult(data) {
+  const resultDiv = document.getElementById("result");
+
+  let flagsHtml = "";
+  if (data.red_flags.length === 0) {
+    flagsHtml = "<p class='no-flags'>No red flags detected.</p>";
+  } else {
+    data.red_flags.forEach(flag => {
+      const sevClass = flag.severity === "high" ? "severity-high" : "severity-medium";
+      flagsHtml += `
+        <div class="flag">
+          <span class="flag-title">${flag.flag.replaceAll("_", " ")}</span>
+          <span class="severity-tag ${sevClass}">${flag.severity}</span>
+          <div style="margin-top:4px;">${flag.explanation}</div>
+        </div>
+      `;
+    });
+  }
+
+  const infoHtml = `
+    <ul class="info-list">
+      <li><strong>Email:</strong> ${data.extracted_info.email || "Not found"}</li>
+      <li><strong>Phone:</strong> ${data.extracted_info.phone || "Not found"}</li>
+      <li><strong>Salary:</strong> ${data.extracted_info.salary || "Not found"}</li>
+      <li><strong>URLs:</strong> ${data.extracted_info.urls.length ? data.extracted_info.urls.join(", ") : "None found"}</li>
+    </ul>
+  `;
+
+  let recHtml = "<ul class='rec-list'>";
+  data.recommendations.forEach(rec => {
+    recHtml += `<li>${rec}</li>`;
+  });
+  recHtml += "</ul>";
+
+  const mlPercent = (data.ml_scam_probability * 100).toFixed(1);
+
+  resultDiv.innerHTML = `
+    <div class="risk-box ${data.risk_level}">
+      <span>Risk Level: ${data.risk_level}</span>
+      <span class="score-pill">${data.risk_score}/100</span>
+    </div>
+
+    <div class="section">
+      <h3>🤖 ML Model Assessment</h3>
+      <p>Estimated scam probability: <strong>${mlPercent}%</strong></p>
+      <div class="ml-bar-bg">
+        <div class="ml-bar-fill" style="width:${mlPercent}%;"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>🚩 Red Flags</h3>
+      ${flagsHtml}
+    </div>
+
+    <div class="section">
+      <h3>📋 Extracted Information</h3>
+      ${infoHtml}
+    </div>
+
+    <div class="section">
+      <h3>✅ Recommendations</h3>
+      ${recHtml}
+    </div>
+  `;
+}
+</script>
+
+</body>
+</html>
