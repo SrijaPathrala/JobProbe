@@ -6,7 +6,12 @@ from sklearn.metrics import accuracy_score
 import joblib
 
 # ---- Load dataset ----
-df = pd.read_csv("dataset.csv")
+
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+df = pd.read_csv(BASE_DIR / "dataset.csv")
+
 
 X = df["text"]
 y = df["label"]
