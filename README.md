@@ -99,8 +99,8 @@ python3 -m venv venv
 source venv/bin/activate
 
 3. Install Dependencies
+pip install -r requirements.txt
 
-pip install fastapi uvicorn scikit-learn pandas joblib
 
 4. Start the Backend
 
