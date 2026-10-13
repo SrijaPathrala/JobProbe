@@ -31,6 +31,6 @@ accuracy = accuracy_score(y_test, predictions)
 print(f"Model accuracy on test set: {accuracy:.2f}")
 
 # ---- Save model + vectorizer for later use ----
-joblib.dump(model, "scam_classifier.pkl")
-joblib.dump(vectorizer, "vectorizer.pkl")
+joblib.dump(model, BASE_DIR / "scam_classifier.pkl")
+joblib.dump(vectorizer, BASE_DIR / "vectorizer.pkl")
 print("Model and vectorizer saved successfully.")
